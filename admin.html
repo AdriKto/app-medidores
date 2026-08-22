@@ -5,30 +5,60 @@
     <title>Panel de Administración</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Consumos del Mes</h2>
-        <button class="btn btn-success" onclick="exportarCSV()">Descargar CSV</button>
+<body class="container mt-4 mb-5">
+
+    <!-- Pantalla de Login -->
+    <div id="pantallaLogin" class="card mx-auto mt-5" style="max-width: 400px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        <div class="card-body">
+            <h4 class="card-title text-center mb-4">Acceso Administración</h4>
+            <div class="mb-3">
+                <input type="password" id="inputPass" class="form-control" placeholder="Ingresá la contraseña">
+            </div>
+            <button class="btn btn-dark w-100" onclick="verificarAcceso()">Ingresar</button>
+        </div>
     </div>
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Lote</th>
-                <th>Medidor</th>
-                <th>Lectura (kW/h)</th>
-                <th>Fecha</th>
-                <th>Foto</th>
-            </tr>
-        </thead>
-        <tbody id="tablaCuerpo">
-            <tr><td colspan="5">Cargando datos...</td></tr>
-        </tbody>
-    </table>
+    <!-- Pantalla del Dashboard (Oculta por defecto) -->
+    <div id="pantallaDashboard" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Consumos del Mes</h2>
+            <button class="btn btn-success" onclick="exportarCSV()">Descargar CSV</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Lote</th>
+                        <th>Medidor</th>
+                        <th>Lectura (kW/h)</th>
+                        <th>Fecha</th>
+                        <th>Evidencia</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCuerpo">
+                    <tr><td colspan="5" class="text-center">Cargando datos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     <script>
         const API_URL = 'https://api-medidores-x258.onrender.com/api';
         let datosGlobales = [];
+
+        function verificarAcceso() {
+            const pass = document.getElementById('inputPass').value;
+            
+            // Acá definís la contraseña. Ahora está puesta "consorcio2026"
+            if (pass === "consorcio2026") {
+                document.getElementById('pantallaLogin').style.display = 'none';
+                document.getElementById('pantallaDashboard').style.display = 'block';
+                cargarDatos();
+            } else {
+                alert("Contraseña incorrecta.");
+            }
+        }
 
         async function cargarDatos() {
             try {
@@ -41,45 +71,60 @@
                     tbody.innerHTML = '';
 
                     datosGlobales.forEach(fila => {
-                        // Supabase devuelve el join como un objeto anidado
                         const lote = fila.medidores ? fila.medidores.lote : 'Sin lote';
-                        const fecha = new Date(fila.fecha_lectura).toLocaleDateString('es-AR');
+                        // Validación por si quedó algún registro viejo con fecha nula en la base
+                        const fecha = fila.fecha_lectura ? new Date(fila.fecha_lectura).toLocaleDateString('es-AR') : '-';
                         
                         tbody.innerHTML += `
                             <tr>
-                                <td>${lote}</td>
+                                <td class="fw-bold">${lote}</td>
                                 <td>${fila.id_medidor}</td>
                                 <td>${fila.valor_lectura}</td>
                                 <td>${fecha}</td>
-                                <td><a href="${fila.ruta_evidencia}" target="_blank" class="btn btn-sm btn-info">Ver Foto</a></td>
+                                <td>
+                                    <a href="${fila.ruta_evidencia}" target="_blank" class="btn btn-sm btn-outline-primary">Ver Foto</a>
+                                </td>
                             </tr>
                         `;
                     });
                 }
             } catch (error) {
-                alert('Error cargando los datos');
+                alert('Error al intentar cargar los registros desde el servidor.');
             }
         }
 
         function exportarCSV() {
-            if (datosGlobales.length === 0) return alert('No hay datos para exportar');
+            if (datosGlobales.length === 0) {
+                alert('No hay datos para exportar.');
+                return;
+            }
             
             let csv = 'Lote,Medidor,Lectura,Fecha,Enlace_Foto\n';
             
             datosGlobales.forEach(fila => {
                 const lote = fila.medidores ? fila.medidores.lote : '';
-                const fecha = new Date(fila.fecha_lectura).toLocaleDateString('es-AR');
+                const fecha = fila.fecha_lectura ? new Date(fila.fecha_lectura).toLocaleDateString('es-AR') : '';
+                // Se envuelve el lote en comillas por si tiene comas adentro
                 csv += `"${lote}",${fila.id_medidor},${fila.valor_lectura},${fecha},${fila.ruta_evidencia}\n`;
             });
 
+            // Forzar descarga del archivo
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
             link.download = "lecturas_consorcio.csv";
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
         }
 
-        cargarDatos();
+        // Permite presionar Enter en el input de contraseña para ingresar
+        document.getElementById("inputPass").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                verificarAcceso();
+            }
+        });
     </script>
 </body>
 </html>
