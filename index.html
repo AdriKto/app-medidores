@@ -3,44 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Toma de Lecturas</title>
+    <title>Registro de Consumo - Campos de la Enriqueta</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f6f8;
+        }
+        .navbar-brand {
+            font-weight: 600;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+        }
+        .card-custom {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            background: #fff;
+        }
+        .btn-custom {
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 12px;
+        }
+        .form-control {
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #dee2e6;
+        }
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #198754;
+        }
+    </style>
 </head>
-<body class="container mt-4 mb-5">
-    <h3 class="mb-4">Toma de Consumo</h3>
-    
-    <!-- PASO 1: Escáner de Código de Barras -->
-    <div id="seccionEscaner">
-        <div class="alert alert-info">Paso 1: Identificá el medidor.</div>
-        <div id="lectorCamara" style="width: 100%; border-radius: 8px; overflow: hidden;"></div>
-        <button class="btn btn-dark w-100 mt-3" onclick="iniciarEscaner()">Abrir Cámara para Escanear</button>
+<body>
+
+    <!-- Barra Superior -->
+    <nav class="navbar navbar-dark bg-dark shadow-sm">
+        <div class="container-fluid justify-content-center">
+            <span class="navbar-brand mb-0 h1"><i class="bi bi-houses me-2"></i>Campos de la Enriqueta</span>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-5 max-w-md" style="max-width: 500px; margin: auto;">
+        
+        <div class="text-center mb-4">
+            <h4 class="fw-bold text-dark mb-1">Registro de Consumo Eléctrico</h4>
+            <p class="text-muted small">Toma de lecturas mensuales</p>
+        </div>
+        
+        <!-- PASO 1: Escáner -->
+        <div id="seccionEscaner" class="card card-custom p-4">
+            <div class="text-center mb-3">
+                <div class="badge bg-primary px-3 py-2 mb-2 rounded-pill">Paso 1</div>
+                <h5 class="fw-semibold">Identificar Medidor</h5>
+                <p class="text-muted small mb-0">Escaneá el código de barras del equipo</p>
+            </div>
+            
+            <div id="lectorCamara" style="width: 100%; border-radius: 8px; overflow: hidden; border: 2px dashed #ccc;"></div>
+            
+            <button class="btn btn-dark btn-custom w-100 mt-4" onclick="iniciarEscaner()">
+                <i class="bi bi-upc-scan me-2"></i>Abrir Escáner
+            </button>
+        </div>
+
+        <!-- PASO 2: Formulario (Oculto inicialmente) -->
+        <form id="formularioLectura" style="display: none;" class="card card-custom p-4">
+            <div class="text-center mb-3">
+                <div class="badge bg-success px-3 py-2 mb-2 rounded-pill">Paso 2</div>
+                <h5 class="fw-semibold">Cargar Datos</h5>
+            </div>
+
+            <div id="contenedorAlertaLote"></div>
+            
+            <div class="mb-3">
+                <label class="form-label text-muted small fw-bold text-uppercase mb-1">ID Medidor</label>
+                <input type="text" class="form-control fw-bold bg-light text-center fs-5" id="idMedidor" readonly>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label text-muted small fw-bold text-uppercase mb-1">Lectura Actual (kW/h)</label>
+                <input type="number" step="0.01" class="form-control text-center fs-4 fw-bold" id="valorLectura" placeholder="0.00" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label text-muted small fw-bold text-uppercase mb-1">Foto de Evidencia</label>
+                <input type="file" accept="image/*" capture="environment" class="form-control" id="fotoMedidor" required>
+            </div>
+
+            <button type="button" class="btn btn-success btn-custom w-100 btn-guardar mb-2" onclick="comprimirYEnviar()">
+                <i class="bi bi-cloud-arrow-up me-2"></i>Guardar Lectura
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-custom w-100" onclick="reiniciarApp()">
+                <i class="bi bi-arrow-counterclockwise me-2"></i>Volver a escanear
+            </button>
+        </form>
     </div>
 
-    <!-- PASO 2: Formulario de Carga (Oculto inicialmente) -->
-    <form id="formularioLectura" style="display: none;">
-        <div id="contenedorAlertaLote"></div>
-        
-        <div class="mb-3 mt-2">
-            <label class="form-label">ID Medidor</label>
-            <input type="text" class="form-control fw-bold bg-light" id="idMedidor" readonly>
-        </div>
-        
-        <div class="mb-3">
-            <label class="form-label">Paso 2: Lectura Actual (kW/h)</label>
-            <input type="number" step="0.01" class="form-control" id="valorLectura" required>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Paso 3: Foto de Evidencia</label>
-            <input type="file" accept="image/*" capture="environment" class="form-control" id="fotoMedidor" required>
-        </div>
-
-        <button type="button" class="btn btn-primary w-100 btn-guardar" onclick="comprimirYEnviar()">Guardar Lectura</button>
-        <button type="button" class="btn btn-outline-secondary w-100 mt-2" onclick="reiniciarApp()">Cancelar / Volver a escanear</button>
-    </form>
-
     <script>
+        // ACÁ VA EXACTAMENTE EL MISMO SCRIPT QUE YA TENÍAS EN INDEX.HTML
+        // Copialo y pegalo tal cual estaba (desde let html5QrCode; hasta el final).
+        // Te dejo el bloque limpio para que lo pegues:
+        
         let html5QrCode;
         const API_URL = 'https://api-medidores-x258.onrender.com/api';
 
@@ -51,7 +119,7 @@
             html5QrCode.start({ facingMode: "environment" }, config, 
                 async (codigoEscaneado) => {
                     html5QrCode.stop().then(async () => {
-                        document.getElementById('seccionEscaner').innerHTML = '<div class="alert alert-warning">Consultando medidor...</div>';
+                        document.getElementById('seccionEscaner').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Consultando medidor...</p></div>';
                         
                         try {
                             const respuesta = await fetch(`${API_URL}/medidores/${codigoEscaneado}`);
@@ -61,8 +129,9 @@
                                 document.getElementById('idMedidor').value = codigoEscaneado;
                                 
                                 document.getElementById('contenedorAlertaLote').innerHTML = `
-                                    <div class="alert alert-success mt-3 mb-0">
-                                        <strong>Lote Detectado:</strong> ${datos.lote}
+                                    <div class="alert alert-success d-flex align-items-center mb-4" role="alert">
+                                        <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                                        <div><strong>Lote:</strong> ${datos.lote}</div>
                                     </div>`;
 
                                 document.getElementById('seccionEscaner').style.display = 'none';
@@ -77,22 +146,27 @@
                         }
                     });
                 },
-                (error) => {} // Ignorar errores mientras enfoca
+                (error) => {} 
             ).catch(err => {
                 alert("Error de cámara. Asegurate de dar permisos.");
             });
         }
 
         function reiniciarApp() {
-            // Restauramos la vista del escáner
             document.getElementById('formularioLectura').reset();
             document.getElementById('formularioLectura').style.display = 'none';
             document.getElementById('contenedorAlertaLote').innerHTML = '';
             
             document.getElementById('seccionEscaner').innerHTML = `
-                <div class="alert alert-info">Paso 1: Identificá el medidor.</div>
-                <div id="lectorCamara" style="width: 100%; border-radius: 8px; overflow: hidden;"></div>
-                <button class="btn btn-dark w-100 mt-3" onclick="iniciarEscaner()">Abrir Cámara para Escanear</button>
+                <div class="text-center mb-3">
+                    <div class="badge bg-primary px-3 py-2 mb-2 rounded-pill">Paso 1</div>
+                    <h5 class="fw-semibold">Identificar Medidor</h5>
+                    <p class="text-muted small mb-0">Escaneá el código de barras del equipo</p>
+                </div>
+                <div id="lectorCamara" style="width: 100%; border-radius: 8px; overflow: hidden; border: 2px dashed #ccc;"></div>
+                <button class="btn btn-dark btn-custom w-100 mt-4" onclick="iniciarEscaner()">
+                    <i class="bi bi-upc-scan me-2"></i>Abrir Escáner
+                </button>
             `;
             document.getElementById('seccionEscaner').style.display = 'block';
         }
@@ -109,7 +183,7 @@
 
             const btnGuardar = document.querySelector('.btn-guardar');
             btnGuardar.disabled = true;
-            btnGuardar.innerText = "Guardando y subiendo foto...";
+            btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Subiendo...';
 
             const reader = new FileReader();
             reader.readAsDataURL(archivo);
@@ -149,7 +223,7 @@
                             alert('Falló la conexión de red al enviar los datos.');
                         } finally {
                             btnGuardar.disabled = false;
-                            btnGuardar.innerText = "Guardar Lectura";
+                            btnGuardar.innerHTML = '<i class="bi bi-cloud-arrow-up me-2"></i>Guardar Lectura';
                         }
                     }, 'image/jpeg', 0.7);
                 }
