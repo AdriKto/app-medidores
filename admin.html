@@ -7,40 +7,14 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f4f6f8;
-        }
-        .navbar {
-            background-color: #1c2833 !important;
-        }
-        .navbar-brand {
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-        .card-custom {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            background: #fff;
-        }
-        .table {
-            margin-bottom: 0;
-        }
-        .table thead th {
-            background-color: #f8f9fa;
-            color: #495057;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            border-bottom: 2px solid #dee2e6;
-        }
-        .badge-periodo {
-            background-color: #e9ecef;
-            color: #495057;
-            border: 1px solid #ced4da;
-            font-weight: 600;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #f4f6f8; }
+        .navbar { background-color: #1c2833 !important; }
+        .navbar-brand { font-weight: 600; letter-spacing: 0.5px; }
+        .card-custom { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: #fff; }
+        .table { margin-bottom: 0; }
+        .table thead th { background-color: #f8f9fa; color: #495057; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; border-bottom: 2px solid #dee2e6; }
+        .badge-periodo { background-color: #e9ecef; color: #495057; border: 1px solid #ced4da; font-weight: 600; }
+        .nav-menus { display: none; }
     </style>
 </head>
 <body>
@@ -49,7 +23,10 @@
     <nav class="navbar navbar-dark shadow-sm">
         <div class="container-fluid px-4">
             <span class="navbar-brand mb-0 h1"><i class="bi bi-tree me-2"></i>Campos de la Enriqueta</span>
-            <span class="text-light opacity-75 small d-none d-sm-block">Registro de Consumo Eléctrico</span>
+            <div class="nav-menus text-light" id="menuNavegacion">
+                <button class="btn btn-sm btn-outline-light me-2" onclick="cambiarVista('dashboard')">Consumos</button>
+                <button class="btn btn-sm btn-outline-light" onclick="cambiarVista('medidores')">Medidores</button>
+            </div>
         </div>
     </nav>
 
@@ -61,7 +38,6 @@
                 <div class="text-center mb-4">
                     <i class="bi bi-shield-lock fs-1 text-secondary"></i>
                     <h4 class="fw-bold mt-2">Acceso Restringido</h4>
-                    <p class="text-muted small">Panel de Administración</p>
                 </div>
                 <div class="mb-4">
                     <input type="password" id="inputPass" class="form-control form-control-lg text-center" placeholder="Contraseña">
@@ -70,13 +46,11 @@
             </div>
         </div>
 
-        <!-- Pantalla del Dashboard (Oculta por defecto) -->
+        <!-- Pantalla del Dashboard (Consumos) -->
         <div id="pantallaDashboard" style="display: none;">
-            
             <div class="row mb-4 align-items-center">
                 <div class="col-md-5">
                     <h3 class="fw-bold mb-0">Consumos Mensuales</h3>
-                    <p class="text-muted small mb-0">Historial y exportación para liquidación</p>
                 </div>
                 <div class="col-md-4 mt-3 mt-md-0">
                     <div class="input-group shadow-sm">
@@ -93,7 +67,6 @@
                 </div>
             </div>
 
-            <!-- Tabla de datos -->
             <div class="card card-custom overflow-hidden">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
@@ -108,141 +81,255 @@
                                 <th class="text-center pe-4">Evidencia</th>
                             </tr>
                         </thead>
-                        <tbody id="tablaCuerpo">
-                            <tr><td colspan="7" class="text-center py-5 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Cargando datos...</td></tr>
-                        </tbody>
+                        <tbody id="tablaCuerpo"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla de Medidores -->
+        <div id="pantallaMedidores" style="display: none;">
+            <div class="row mb-4 align-items-center">
+                <div class="col-md-8">
+                    <h3 class="fw-bold mb-0">Gestión de Medidores</h3>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-primary shadow-sm" onclick="abrirModalAlta()">
+                        <i class="bi bi-plus-lg me-2"></i>Nuevo Medidor
+                    </button>
+                </div>
+            </div>
+
+            <div class="card card-custom overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">ID Medidor</th>
+                                <th>Lote Asignado</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaCuerpoMedidores"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Modal ABM Medidores -->
+    <div class="modal fade" id="modalMedidor" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitulo">Medidor</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="medidorIdOriginal">
+            <div class="mb-3">
+              <label class="form-label">ID Medidor (Escáner/Serie)</label>
+              <input type="number" class="form-control" id="medidorIdInput" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Lote / Casa</label>
+              <input type="text" class="form-control" id="medidorLoteInput" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="guardarMedidor()">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Script de Bootstrap necesario para el modal -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        // ACÁ VA EL MISMO SCRIPT DE ADMIN.HTML QUE TENÍAS (Apenas modifiqué la estructura HTML que se inyecta en la tabla para que coincida con el nuevo diseño)
-        
         const API_URL = 'https://api-medidores-x258.onrender.com/api';
         let datosGlobales = [];
         let datosFiltrados = [];
+        let medidoresGlobales = [];
+        let modalInstancia = null;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            modalInstancia = new bootstrap.Modal(document.getElementById('modalMedidor'));
+        });
 
         function verificarAcceso() {
             const pass = document.getElementById('inputPass').value;
             if (pass === "consorcio2026") {
                 document.getElementById('pantallaLogin').style.display = 'none';
-                document.getElementById('pantallaDashboard').style.display = 'block';
-                cargarDatos();
+                document.getElementById('menuNavegacion').style.display = 'block';
+                cambiarVista('dashboard');
+                cargarLecturas();
+                cargarMedidores();
             } else {
                 alert("Contraseña incorrecta.");
             }
         }
 
-        async function cargarDatos() {
+        function cambiarVista(vista) {
+            document.getElementById('pantallaDashboard').style.display = vista === 'dashboard' ? 'block' : 'none';
+            document.getElementById('pantallaMedidores').style.display = vista === 'medidores' ? 'block' : 'none';
+        }
+
+        // --- LÓGICA DE LECTURAS (Mantenida igual) ---
+        async function cargarLecturas() {
             try {
                 const respuesta = await fetch(`${API_URL}/lecturas`);
                 const json = await respuesta.json();
-                
                 if (json.status === "success") {
                     datosGlobales = json.data;
                     datosFiltrados = datosGlobales;
                     armarDesplegablePeriodos();
-                    renderizarTabla();
+                    renderizarTablaLecturas();
                 }
-            } catch (error) {
-                alert('Error al cargar los registros.');
-            }
+            } catch (error) { console.error(error); }
         }
 
         function armarDesplegablePeriodos() {
             const select = document.getElementById('filtroPeriodo');
-            const periodosUnicos = [...new Set(datosGlobales.map(item => item.periodo))];
-            const periodosLimpios = periodosUnicos.filter(p => p !== null && p !== '');
-
-            periodosLimpios.forEach(periodo => {
-                const option = document.createElement('option');
-                option.value = periodo;
-                option.text = periodo; 
-                select.appendChild(option);
+            select.innerHTML = '<option value="todos">Todos los meses</option>';
+            const periodosUnicos = [...new Set(datosGlobales.map(item => item.periodo))].filter(p => p);
+            periodosUnicos.forEach(periodo => {
+                select.innerHTML += `<option value="${periodo}">${periodo}</option>`;
             });
-            
-            if (periodosLimpios.length > 0) {
-                select.value = periodosLimpios[0];
-                aplicarFiltro();
-            }
+            if (periodosUnicos.length > 0) { select.value = periodosUnicos[0]; aplicarFiltro(); }
         }
 
         function aplicarFiltro() {
-            const periodoSeleccionado = document.getElementById('filtroPeriodo').value;
-            if (periodoSeleccionado === "todos") {
-                datosFiltrados = datosGlobales;
-            } else {
-                datosFiltrados = datosGlobales.filter(item => item.periodo === periodoSeleccionado);
-            }
-            renderizarTabla();
+            const periodo = document.getElementById('filtroPeriodo').value;
+            datosFiltrados = periodo === "todos" ? datosGlobales : datosGlobales.filter(i => i.periodo === periodo);
+            renderizarTablaLecturas();
         }
 
-        function renderizarTabla() {
+        function renderizarTablaLecturas() {
             const tbody = document.getElementById('tablaCuerpo');
             tbody.innerHTML = '';
-
-            if (datosFiltrados.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No hay registros para mostrar en este período.</td></tr>';
-                return;
-            }
-
+            if (datosFiltrados.length === 0) return tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Sin registros.</td></tr>';
+            
             datosFiltrados.forEach(fila => {
-                const lote = fila.lote || 'Sin lote';
-                const anterior = fila.lectura_anterior !== null ? fila.lectura_anterior : '-';
                 const consumo = fila.consumo_neto !== null ? fila.consumo_neto : '<span class="text-muted small">Inicial</span>';
-                
                 tbody.innerHTML += `
                     <tr>
-                        <td class="ps-4"><span class="badge badge-periodo px-2 py-1 rounded-1">${fila.periodo}</span></td>
-                        <td class="fw-semibold text-dark">${lote}</td>
+                        <td class="ps-4"><span class="badge badge-periodo px-2 py-1">${fila.periodo}</span></td>
+                        <td class="fw-semibold text-dark">${fila.lote || 'Sin lote'}</td>
                         <td class="text-secondary font-monospace small">${fila.id_medidor}</td>
-                        <td class="text-end text-secondary">${anterior}</td>
+                        <td class="text-end text-secondary">${fila.lectura_anterior || '-'}</td>
                         <td class="text-end fw-medium">${fila.lectura_actual}</td>
                         <td class="text-end fw-bold text-success fs-6">${consumo}</td>
                         <td class="text-center pe-4">
-                            <a href="${fila.ruta_evidencia}" target="_blank" class="btn btn-sm btn-light border shadow-sm">
-                                <i class="bi bi-image text-primary"></i>
-                            </a>
+                            <a href="${fila.ruta_evidencia}" target="_blank" class="btn btn-sm btn-light border"><i class="bi bi-image text-primary"></i></a>
                         </td>
-                    </tr>
-                `;
+                    </tr>`;
             });
         }
 
-        function exportarCSV() {
-            if (datosFiltrados.length === 0) return;
-            
-            const periodoSeleccionado = document.getElementById('filtroPeriodo').value;
-            let nombreArchivo = periodoSeleccionado !== "todos" ? `consumos_${periodoSeleccionado}.csv` : "consumos_todos.csv";
-            
-            let csv = 'Periodo,Lote,Medidor,Lectura_Actual,Lectura_Anterior,Consumo_Neto,Fecha,Enlace_Foto\n';
-            
-            datosFiltrados.forEach(fila => {
-                const lote = fila.lote || '';
-                const anterior = fila.lectura_anterior !== null ? fila.lectura_anterior : '';
-                const consumo = fila.consumo_neto !== null ? fila.consumo_neto : '';
-                const fecha = fila.fecha_lectura ? new Date(fila.fecha_lectura).toLocaleDateString('es-AR') : '';
+        // --- LÓGICA DE MEDIDORES (Nueva) ---
+        async function cargarMedidores() {
+            try {
+                const respuesta = await fetch(`${API_URL}/medidores`);
+                const json = await respuesta.json();
+                if (json.status === "success") {
+                    medidoresGlobales = json.data;
+                    renderizarTablaMedidores();
+                }
+            } catch (error) { alert('Error cargando medidores.'); }
+        }
+
+        function renderizarTablaMedidores() {
+            const tbody = document.getElementById('tablaCuerpoMedidores');
+            tbody.innerHTML = '';
+            medidoresGlobales.forEach(med => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="ps-4 fw-bold text-secondary">${med.id}</td>
+                        <td class="fw-semibold text-dark">${med.lote}</td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-outline-secondary me-1" onclick="abrirModalEdicion(${med.id}, '${med.lote}')"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="borrarMedidor(${med.id})"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function abrirModalAlta() {
+            document.getElementById('medidorIdOriginal').value = '';
+            document.getElementById('medidorIdInput').value = '';
+            document.getElementById('medidorLoteInput').value = '';
+            document.getElementById('modalTitulo').innerText = 'Nuevo Medidor';
+            modalInstancia.show();
+        }
+
+        function abrirModalEdicion(id, lote) {
+            document.getElementById('medidorIdOriginal').value = id;
+            document.getElementById('medidorIdInput').value = id;
+            document.getElementById('medidorLoteInput').value = lote;
+            document.getElementById('modalTitulo').innerText = 'Editar Medidor';
+            modalInstancia.show();
+        }
+
+        async function guardarMedidor() {
+            const idOriginal = document.getElementById('medidorIdOriginal').value;
+            const nuevoId = document.getElementById('medidorIdInput').value;
+            const lote = document.getElementById('medidorLoteInput').value;
+
+            if(!nuevoId || !lote) return alert("Completá todos los campos.");
+
+            const metodo = idOriginal ? 'PUT' : 'POST';
+            const url = idOriginal ? `${API_URL}/medidores/${idOriginal}` : `${API_URL}/medidores`;
+
+            try {
+                const respuesta = await fetch(url, {
+                    method: metodo,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: parseInt(nuevoId), lote: lote })
+                });
+                const resultado = await respuesta.json();
                 
-                csv += `"${fila.periodo}","${lote}",${fila.id_medidor},${fila.lectura_actual},${anterior},${consumo},${fecha},${fila.ruta_evidencia}\n`;
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = nombreArchivo;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+                if (resultado.status === "success") {
+                    modalInstancia.hide();
+                    cargarMedidores();
+                } else {
+                    alert("Error: " + resultado.mensaje);
+                }
+            } catch (error) { alert("Error de conexión."); }
         }
 
-        document.getElementById("inputPass").addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                verificarAcceso();
+        async function borrarMedidor(id) {
+            if(confirm(`¿Estás seguro que querés borrar el medidor ${id}? Esto no borra las lecturas, pero deshabilita el equipo.`)) {
+                try {
+                    const respuesta = await fetch(`${API_URL}/medidores/${id}`, { method: 'DELETE' });
+                    const resultado = await respuesta.json();
+                    if (resultado.status === "success") {
+                        cargarMedidores();
+                    } else {
+                        alert("Error: " + resultado.mensaje);
+                    }
+                } catch (error) { alert("Error de red."); }
             }
-        });
+        }
+
+        document.getElementById("inputPass").addEventListener("keypress", e => { if (e.key === "Enter") verificarAcceso(); });
+        
+        function exportarCSV() {
+             if (datosFiltrados.length === 0) return;
+             const periodoSeleccionado = document.getElementById('filtroPeriodo').value;
+             let nombreArchivo = periodoSeleccionado !== "todos" ? `consumos_${periodoSeleccionado}.csv` : "consumos_todos.csv";
+             let csv = 'Periodo,Lote,Medidor,Lectura_Actual,Lectura_Anterior,Consumo_Neto,Fecha,Enlace_Foto\n';
+             datosFiltrados.forEach(fila => {
+                 const fecha = fila.fecha_lectura ? new Date(fila.fecha_lectura).toLocaleDateString('es-AR') : '';
+                 csv += `"${fila.periodo}","${fila.lote || ''}",${fila.id_medidor},${fila.lectura_actual},${fila.lectura_anterior || ''},${fila.consumo_neto || ''},${fecha},${fila.ruta_evidencia}\n`;
+             });
+             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+             const link = document.createElement("a");
+             link.href = URL.createObjectURL(blob);
+             link.download = nombreArchivo;
+             link.click();
+         }
     </script>
 </body>
 </html>
