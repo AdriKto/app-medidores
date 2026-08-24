@@ -73,6 +73,7 @@
                         <thead>
                             <tr>
                                 <th class="ps-4">Período</th>
+                                <th>Fecha</th>
                                 <th>Lote</th>
                                 <th>Medidor</th>
                                 <th class="text-end">Lectura Ant.</th>
@@ -176,7 +177,7 @@
             document.getElementById('pantallaMedidores').style.display = vista === 'medidores' ? 'block' : 'none';
         }
 
-        // --- LÓGICA DE LECTURAS (Mantenida igual) ---
+        // --- LÓGICA DE LECTURAS ---
         async function cargarLecturas() {
             try {
                 const respuesta = await fetch(`${API_URL}/lecturas`);
@@ -209,13 +210,17 @@
         function renderizarTablaLecturas() {
             const tbody = document.getElementById('tablaCuerpo');
             tbody.innerHTML = '';
-            if (datosFiltrados.length === 0) return tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Sin registros.</td></tr>';
+            
+            if (datosFiltrados.length === 0) return tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Sin registros.</td></tr>';
             
             datosFiltrados.forEach(fila => {
                 const consumo = fila.consumo_neto !== null ? fila.consumo_neto : '<span class="text-muted small">Inicial</span>';
+                const fechaFormat = fila.fecha_lectura ? new Date(fila.fecha_lectura).toLocaleDateString('es-AR') : '-';
+                
                 tbody.innerHTML += `
                     <tr>
                         <td class="ps-4"><span class="badge badge-periodo px-2 py-1">${fila.periodo}</span></td>
+                        <td class="text-muted small">${fechaFormat}</td>
                         <td class="fw-semibold text-dark">${fila.lote || 'Sin lote'}</td>
                         <td class="text-secondary font-monospace small">${fila.id_medidor}</td>
                         <td class="text-end text-secondary">${fila.lectura_anterior || '-'}</td>
@@ -228,7 +233,7 @@
             });
         }
 
-        // --- LÓGICA DE MEDIDORES (Nueva) ---
+        // --- LÓGICA DE MEDIDORES ---
         async function cargarMedidores() {
             try {
                 const respuesta = await fetch(`${API_URL}/medidores`);
@@ -319,10 +324,10 @@
              if (datosFiltrados.length === 0) return;
              const periodoSeleccionado = document.getElementById('filtroPeriodo').value;
              let nombreArchivo = periodoSeleccionado !== "todos" ? `consumos_${periodoSeleccionado}.csv` : "consumos_todos.csv";
-             let csv = 'Periodo,Lote,Medidor,Lectura_Actual,Lectura_Anterior,Consumo_Neto,Fecha,Enlace_Foto\n';
+             let csv = 'Periodo,Fecha,Lote,Medidor,Lectura_Actual,Lectura_Anterior,Consumo_Neto,Enlace_Foto\n';
              datosFiltrados.forEach(fila => {
                  const fecha = fila.fecha_lectura ? new Date(fila.fecha_lectura).toLocaleDateString('es-AR') : '';
-                 csv += `"${fila.periodo}","${fila.lote || ''}",${fila.id_medidor},${fila.lectura_actual},${fila.lectura_anterior || ''},${fila.consumo_neto || ''},${fecha},${fila.ruta_evidencia}\n`;
+                 csv += `"${fila.periodo}","${fecha}","${fila.lote || ''}",${fila.id_medidor},${fila.lectura_actual},${fila.lectura_anterior || ''},${fila.consumo_neto || ''},${fila.ruta_evidencia}\n`;
              });
              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
              const link = document.createElement("a");
