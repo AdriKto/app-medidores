@@ -106,8 +106,12 @@
                     <table class="table table-hover align-middle">
                         <thead>
                             <tr>
-                                <th class="ps-4">ID Medidor</th>
-                                <th>Lote Asignado</th>
+                                <th class="ps-4" style="cursor: pointer;" onclick="ordenarMedidores('id')" title="Ordenar por ID">
+                                    ID Medidor <i class="bi bi-arrow-down-up ms-1 text-muted small"></i>
+                                </th>
+                                <th style="cursor: pointer;" onclick="ordenarMedidores('lote')" title="Ordenar por Lote">
+                                    Lote Asignado <i class="bi bi-arrow-down-up ms-1 text-muted small"></i>
+                                </th>
                                 <th class="text-end pe-4">Acciones</th>
                             </tr>
                         </thead>
@@ -244,7 +248,34 @@
                 }
             } catch (error) { alert('Error cargando medidores.'); }
         }
+        let ordenActual = { columna: '', ascendente: true };
 
+        function ordenarMedidores(columna) {
+            // Si tocamos la misma columna, invertimos el orden. Si es nueva, va ascendente por defecto.
+            if (ordenActual.columna === columna) {
+                ordenActual.ascendente = !ordenActual.ascendente;
+            } else {
+                ordenActual.columna = columna;
+                ordenActual.ascendente = true;
+            }
+
+            medidoresGlobales.sort((a, b) => {
+                let valorA = a[columna];
+                let valorB = b[columna];
+
+                // Manejo especial para lote por si tiene letras (ej: "Manzana A Lote 5")
+                if (columna === 'lote') {
+                    valorA = valorA ? valorA.toString().toLowerCase() : '';
+                    valorB = valorB ? valorB.toString().toLowerCase() : '';
+                }
+
+                if (valorA < valorB) return ordenActual.ascendente ? -1 : 1;
+                if (valorA > valorB) return ordenActual.ascendente ? 1 : -1;
+                return 0;
+            });
+
+            renderizarTablaMedidores();
+        }
         function renderizarTablaMedidores() {
             const tbody = document.getElementById('tablaCuerpoMedidores');
             tbody.innerHTML = '';
